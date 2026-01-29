@@ -52,18 +52,6 @@ combine_ict_files <- function(input_folder, output_file) {
   
   # Convert and combine all data frames
   all_data <- lapply(file_paths, convert_ict_to_df)
-  
-  # --- Step 6: Combine all datasets (align columns automatically) ---
-  # combined_data <- do.call(rbind, lapply(all_data, function(df) {
-  #   # Ensure consistent columns
-  #   df <- df[, unique(unlist(lapply(all_data, names))), drop = FALSE]
-  #   df
-  # }))
-  # 
-  # # --- Step 7: Write one combined CSV ---
-  # write.csv(combined_data, output_file, row.names = FALSE, na = "")
-  # message("Combined ", length(file_paths), " files into one CSV: ", output_file)
-  # invisible(combined_data)
   return(all_data)
 }
 
