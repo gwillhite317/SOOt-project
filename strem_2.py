@@ -19,6 +19,8 @@ O3_COL = "Ozone_ppbv"
 st.title("NASA SOOT STAQS — Ozone vs Altitude")
 
 # --- Sidebar controls ---
+st.sidebar.write("Running:", __file__)
+st.sidebar.write("Commit marker: v1")
 st.sidebar.header("Controls")
 bin_m = st.sidebar.slider("Altitude bin size (m)", 10, 500, 50, 10, key="bin_m")
 window = st.sidebar.slider("Rolling window (bins)", 3, 51, 11, 2, key="window")
@@ -158,3 +160,4 @@ fig = make_profile_plot(
 
 # Render
 st.pyplot(fig)
+
