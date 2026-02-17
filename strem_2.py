@@ -7,7 +7,7 @@ import streamlit as st
 st.set_page_config(page_title="Ozone vs Altitude", layout="wide")
 
 # --- Config ---
-DEFAULT_PATH = r"C:/Users/mowma/Downloads/soot_STAQS_20260212_582d0e3e665f312e6e57a44eb6bc85d9/soot_STAQS_20260212_582d0e3e665f312e6e57a44eb6bc85d9_CSV.csv"
+DEFAULT_PATH = "soot_trimmed.csv"
 FILL_VALUES = [-9999, -9999.0, -8888, -8888.0, -7777, -7777.0]
 
 ALT_COL = "Altitude_m_MSL"
@@ -134,3 +134,4 @@ fig.tight_layout()
 
 # Streamlit render (use this instead of plt.show())
 st.pyplot(fig, clear_figure=False)
+
