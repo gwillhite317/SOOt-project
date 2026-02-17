@@ -73,7 +73,7 @@ profile["mean_smooth"] = (
       .mean()
 )
 
-# --- Plot styling ---
+# --- Plot styling ---# ----- Plot (vertical profile: ozone on x, altitude on y) -----
 plt.rcParams.update({
     "figure.dpi": 150,
     "axes.spines.top": False,
@@ -82,56 +82,60 @@ plt.rcParams.update({
 
 fig, ax = plt.subplots(figsize=(8, 7))
 
+# Color palette (feel free to tweak)
+c_raw    = "#9aa0a6"   # grey
+c_binned = "#1f77b4"   # blue
+c_smooth = "#d62728"   # red
+c_ci     = "#ff7f0e"   # orange
+
 # 1) Raw scatter (ozone vs altitude)
-if show_raw:
-    ax.scatter(
-        d[O3_COL], d[ALT_COL],
-        s=7, alpha=0.10, linewidths=0,
-        label="Raw"
-    )
+ax.scatter(
+    d[O3_COL], d[ALT_COL],
+    s=7, alpha=0.10, linewidths=0,
+    color=c_raw, label="Raw"
+)
 
 # 2) Binned mean (x=mean ozone, y=alt_bin)
 ax.plot(
     profile["mean"], profile["alt_bin"],
     linewidth=1.4, alpha=0.70,
-    label=f"Binned mean ({bin_m} m)"
+    color=c_binned, label=f"Binned mean ({bin_m} m)"
 )
 
 # 3) Smoothed profile (x=mean_smooth ozone, y=alt_bin)
 ax.plot(
     profile["mean_smooth"], profile["alt_bin"],
     linewidth=2.6,
-    label=f"Smoothed (rolling {window} bins)"
+    color=c_smooth, label=f"Smoothed (rolling {window} bins)"
 )
 
 # 4) CI band around smoothed line: fill between x-lower and x-upper along y
-if show_ci:
-    mask = profile["sem"].notna() & profile["mean_smooth"].notna()
-    if mask.any():
-        lower = profile.loc[mask, "mean_smooth"] - 1.96 * profile.loc[mask, "sem"]
-        upper = profile.loc[mask, "mean_smooth"] + 1.96 * profile.loc[mask, "sem"]
+mask = profile["sem"].notna() & profile["mean_smooth"].notna()
+if mask.any():
+    lower = profile.loc[mask, "mean_smooth"] - 1.96 * profile.loc[mask, "sem"]
+    upper = profile.loc[mask, "mean_smooth"] + 1.96 * profile.loc[mask, "sem"]
 
-        ax.fill_betweenx(
-            y=profile.loc[mask, "alt_bin"],
-            x1=lower,
-            x2=upper,
-            alpha=0.18,
-            label="~95% CI (SEM)"
-        )
+    ax.fill_betweenx(
+        y=profile.loc[mask, "alt_bin"],
+        x1=lower,
+        x2=upper,
+        alpha=0.18,
+        color=c_ci,
+        label="~95% CI (SEM)"
+    )
 
 # Labels/title
 ax.set_title("NASA SOOT STAQS — Vertical Ozone Profile (cleaned)")
 ax.set_xlabel("Ozone (ppbv)")
 ax.set_ylabel("Altitude (m MSL)")
+
+# Nice grid
 ax.grid(True, alpha=0.22)
+
+
+
 ax.legend(frameon=False, loc="best")
 fig.tight_layout()
 
-# Streamlit render
+# Streamlit render (use this instead of plt.show())
 st.pyplot(fig, clear_figure=False)
-
-# Optional: quick data peek
-with st.expander("Show cleaned data sample"):
-    st.write(f"Loaded file: `{DATA_PATH.name}`")
-    st.write(f"Rows after cleaning: {len(d):,}")
-    st.dataframe(d[[O3_COL, ALT_COL]].head(200), use_container_width=True)
