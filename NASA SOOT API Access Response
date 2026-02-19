@@ -1,0 +1,40 @@
+#their comments:
+#The following Python code demonstrates how to authenticate the user and download a single file or a set of files for a dataID, platform and year. Before running this script, 
+#you will need to create the .urs_cookies file as explained on this page https://urs.earthdata.nasa.gov/documentation/for_users/data_access/curl_and_wget
+
+import requests
+from http.cookiejar import MozillaCookieJar
+from pathlib import Path
+
+auth_url = "http://asdc.larc.nasa.gov/soot-api/Authenticate/user"
+# To download all files for the ACTIVATE-TRACEGAS-CO dataID for the HU25 platform in 2021
+get_file_url = "https://asdc.larc.nasa.gov/soot-api/data_files/downloadDataIDFiles?dataID=ACTIVATE-TRACEGAS-CO&platform=HU25&year=2021"
+
+# To download 1 specific file
+# get_file_url = "http://asdc.larc.nasa.gov/soot-api/data_files/downloadFiles?filenames=ACTIVATE-LegFlags_HU25_20220118_R0.ict"
+
+# First, create the .urs_cookies file. Instructions here https://urs.earthdata.nasa.gov/documentation/for_users/data_access/curl_and_wget
+#
+# Define the path to your cookie file and load them
+cookie_file_path = Path('.urs_cookies')
+cookies = MozillaCookieJar(cookie_file_path)
+cookies.load(ignore_expires=True)
+
+# Create a session and update its cookies with the loaded cookies
+session = requests.Session()
+session.cookies.update(cookies)
+
+# Now all requests made with this session will use the cookies from the file.
+# Authorize the user and then download the file(s)
+response = session.get(auth_url)
+if response.status_code == 200:
+    print('User authorized')
+    response = session.get(get_file_url)
+    if response.status_code == 200:
+        with open('data.zip', 'wb') as f:
+            f.write(response.content)
+        print('Data downloaded to data.zip')
+    else:
+        print('Unable to download files. Response code {response.status_code}')
+else:
+    print('User not authorized')
