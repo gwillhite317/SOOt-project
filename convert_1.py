@@ -435,13 +435,13 @@ session.auth = None  # requests will use your .netrc automatically
 auth_url = "http://asdc.larc.nasa.gov/soot-api/Authenticate/user"
 download_files_url = "https://asdc.larc.nasa.gov/soot-api/data_files/downloadFiles"
 
-# IMPORTANT: load the cookie file from where it was created
-# Your earlier output indicated: C:\Users\Greyson\.urs_cookies
-# note you need to replace with your cookies path that you created after login
-cookie_file_path = Path(r"C:\Users\Greyson\.urs_cookies")
+# Load the cookie file from where it was created
+cookie_file_path = file_path  # Use the same path as created above
 
 cookies = MozillaCookieJar((cookie_file_path))
-cookies.load(ignore_expires=True)
+# Only load if the file exists and has content (to avoid format errors on empty file)
+if cookie_file_path.exists() and cookie_file_path.stat().st_size > 0:
+    cookies.load(ignore_expires=True)
 
 session = requests.Session()
 session.cookies.update(cookies)
@@ -453,6 +453,12 @@ print("AUTH status:", auth_resp.status_code, "| final URL:", auth_resp.url)
 if auth_resp.status_code != 200:
     print("AUTH body (first 300 chars):", auth_resp.text[:300])
     raise RuntimeError("ERROR: User not authorized. Check that .urs_cookies exists, is valid, and is being loaded correctly.")
+
+# Save updated cookies after successful auth
+jar = MozillaCookieJar(str(cookie_file_path))
+for cookie in session.cookies:
+    jar.set_cookie(cookie)
+jar.save(ignore_discard=True, ignore_expires=True)
 
 print("User authorized. Beginning downloads...")
 
@@ -495,8 +501,9 @@ for entry in os.scandir(folder):
             file_paths += [entry.path]
 
 format = '%Y,%m,%d'
-        
-combined_df = pd.DataFrame()
+
+# Collect all dataframes first, then concat once (much faster than concat in loop)
+dfs_to_combine = []
 for file in file_paths:
     r = ICARTTReader(file)
     df = r.read_table()
@@ -530,8 +537,11 @@ for file in file_paths:
         new_col_name = column.replace("Time", "Datetime")
         df[new_col_name] = start_datetime + pd.to_timedelta(df[col], unit = "s")
    
-    #combine dataframes
-    combined_df = pd.concat([combined_df, df], ignore_index = True)
+    # Collect dataframe to combine later
+    dfs_to_combine.append(df)
+
+# Combine all dataframes at once (much faster than concatenating in loop)
+combined_df = pd.concat(dfs_to_combine, ignore_index=True) if dfs_to_combine else pd.DataFrame()
 
 out_path = Path(f"{folder}\\{campaign}_{year}_{platform}_{pi}.csv")
 csv_path = combined_df.to_csv(out_path)
